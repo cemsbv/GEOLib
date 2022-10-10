@@ -141,8 +141,7 @@ class DFoundationsModel(BaseModel):
     """
 
     datastructure: Union[
-        DFoundationsDumpStructure,
-        DFoundationsStructure,
+        DFoundationsDumpStructure, DFoundationsStructure,
     ] = DFoundationsStructure()
 
     @property
@@ -210,7 +209,7 @@ class DFoundationsModel(BaseModel):
         return self.datastructure.input_data.soil_collection
 
     def add_soil(self, soil: Soil) -> str:
-        """Soil is converted in the internal structure and added in soil_collection."""
+        """ Soil is converted in the internal structure and added in soil_collection."""
         soil_internal = soil._to_dfoundations()
         new_soil = self.datastructure.input_data.soil_collection.add_soil_if_unique(
             soil_internal

@@ -74,7 +74,7 @@ class DStabilityModel(BaseModel):
 
     @property
     def console_path(self) -> Path:
-        return Path("DStabilityConsole/D-Stability Console.exe")
+        return Path("DStabilityConsole/D-GEO Suite Stability GEOLIB Console.exe")
 
     @property
     def soils(self) -> SoilCollection:
@@ -379,9 +379,7 @@ class DStabilityModel(BaseModel):
         return int(persistable_referenceline.Id)
 
     def add_state_point(
-        self,
-        state_point: DStabilityStatePoint,
-        stage_id: int = None,
+        self, state_point: DStabilityStatePoint, stage_id: int = None,
     ) -> int:
         """
         Add state point to the model
@@ -570,9 +568,7 @@ class DStabilityModel(BaseModel):
             raise ValueError(f"No soil layers found for stage id {stage_id}")
 
     def add_reinforcement(
-        self,
-        reinforcement: DStabilityReinforcement,
-        stage_id: Optional[int] = None,
+        self, reinforcement: DStabilityReinforcement, stage_id: Optional[int] = None,
     ) -> None:
         """Add a reinforcement to the model.
 

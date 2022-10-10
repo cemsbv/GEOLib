@@ -63,11 +63,7 @@ class TestCurveSettings:
         ],
     )
     @pytest.mark.parametrize(
-        "use_unloading_reloading_curve",
-        [
-            pytest.param(True),
-            pytest.param(False),
-        ],
+        "use_unloading_reloading_curve", [pytest.param(True), pytest.param(False),]
     )
     @pytest.mark.parametrize(
         "curve_number,raising_context",
@@ -116,11 +112,7 @@ class TestCurveSettings:
         ],
     )
     @pytest.mark.parametrize(
-        "use_unloading_reloading_curve",
-        [
-            pytest.param(True),
-            pytest.param(False),
-        ],
+        "use_unloading_reloading_curve", [pytest.param(True), pytest.param(False),]
     )
     @pytest.mark.parametrize(
         "curve_number",
