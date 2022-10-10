@@ -2,18 +2,17 @@ import json
 from collections import defaultdict
 from datetime import date, datetime
 from enum import Enum
-from functools import partial
 from itertools import chain
 from math import isfinite
 from typing import Dict, Generator, List, Optional, Set, Tuple, Union
 
-from pydantic import ValidationError, confloat, conlist, root_validator, validator
+from pydantic import ValidationError, conlist, root_validator, validator
 
 from geolib import __version__ as version
 from geolib.geometry import Point
 from geolib.models.base_model_structure import BaseModelStructure
-from geolib.soils import ShearStrengthModelTypePhreaticLevel, Soil
-from geolib.utils import camel_to_snake, snake_to_camel
+from geolib.soils import Soil
+from geolib.utils import snake_to_camel
 
 from .dstability_validator import DStabilityValidator
 from .utils import children
@@ -77,16 +76,16 @@ class PersistablePoint(DStabilityBaseModelStructure):
 
 class PersistableHeadLine(DStabilityBaseModelStructure):
     Id: Optional[str]
-    Label: Optional[str]
-    Notes: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     Points: Optional[List[Optional[PersistablePoint]]]
 
 
 class PersistableReferenceLine(DStabilityBaseModelStructure):
     BottomHeadLineId: Optional[str]
     Id: Optional[str]
-    Label: Optional[str]
-    Notes: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     Points: Optional[List[Optional[PersistablePoint]]]
     TopHeadLineId: Optional[str]
 
@@ -266,7 +265,8 @@ class PersistableStateLinePoint(DStabilityBaseModelStructure):
     Id: Optional[str]
     IsAboveAndBelowCorrelated: Optional[bool]
     IsProbabilistic: Optional[bool]
-    Label: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     X: Optional[float]
 
 
@@ -278,8 +278,9 @@ class PersistableStateLine(DStabilityBaseModelStructure):
 class PersistableStatePoint(DStabilityBaseModelStructure):
     Id: Optional[str]
     IsProbabilistic: Optional[bool]
-    Label: Optional[str]
+    Label: Optional[str] = ""
     LayerId: Optional[str]
+    Notes: Optional[str] = ""
     Point: Optional[PersistablePoint]
     Stress: Optional[PersistableStress]
 
@@ -352,9 +353,9 @@ class Stage(DStabilitySubStructure):
     DecorationsId: Optional[str]
     GeometryId: Optional[str]
     Id: Optional[str]
-    Label: Optional[str]
+    Label: Optional[str] = ""
     LoadsId: Optional[str]
-    Notes: Optional[str]
+    Notes: Optional[str] = ""
     ReinforcementsId: Optional[str]
     ResultId: Optional[str] = None
     SoilLayersId: Optional[str]
@@ -491,39 +492,40 @@ class PersistableSuTable(DStabilityBaseModelStructure):
 
 class PersistableSoil(DStabilityBaseModelStructure):
     Code: str = ""
-    Cohesion: confloat(ge=0) = 0.0
+    Cohesion: float = 0.0
     CohesionAndFrictionAngleCorrelated: bool = False
     CohesionStochasticParameter: PersistableStochasticParameter = (
         PersistableStochasticParameter()
     )
-    Dilatancy: confloat(ge=0) = 0.0
+    Dilatancy: float = 0.0
     DilatancyStochasticParameter: PersistableStochasticParameter = (
         PersistableStochasticParameter()
     )
-    FrictionAngle: confloat(ge=0) = 0.0
+    FrictionAngle: float = 0.0
     FrictionAngleStochasticParameter: PersistableStochasticParameter = (
         PersistableStochasticParameter()
     )
     Id: str = ""
     IsProbabilistic: bool = False
-    Name: str = ""
+    Name: Optional[str] = ""
+    Notes: Optional[str] = ""
     ShearStrengthModelTypeAbovePhreaticLevel: ShearStrengthModelTypePhreaticLevelInternal = (
         ShearStrengthModelTypePhreaticLevelInternal.C_PHI
     )
     ShearStrengthModelTypeBelowPhreaticLevel: ShearStrengthModelTypePhreaticLevelInternal = (
         ShearStrengthModelTypePhreaticLevelInternal.SU
     )
-    ShearStrengthRatio: confloat(ge=0) = 0.0
+    ShearStrengthRatio: float = 0.0
     ShearStrengthRatioAndShearStrengthExponentCorrelated: bool = False
     ShearStrengthRatioStochasticParameter: PersistableStochasticParameter = (
         PersistableStochasticParameter()
     )
-    StrengthIncreaseExponent: confloat(ge=0) = 1.0
+    StrengthIncreaseExponent: float = 1.0
     StrengthIncreaseExponentStochasticParameter: PersistableStochasticParameter = (
         PersistableStochasticParameter()
     )
-    VolumetricWeightAbovePhreaticLevel: confloat(ge=0) = 0.0
-    VolumetricWeightBelowPhreaticLevel: confloat(ge=0) = 0.0
+    VolumetricWeightAbovePhreaticLevel: float = 0.0
+    VolumetricWeightBelowPhreaticLevel: float = 0.0
     SuTable: PersistableSuTable = PersistableSuTable()
 
 
@@ -709,7 +711,7 @@ class SoilCollection(DStabilitySubStructure):
         # shear increase exponent taken from persistable_soil.SuTable or just from persistable_soil
         if (
             persistable_soil.ShearStrengthModelTypeAbovePhreaticLevel.value == "Su"
-            or persistable_soil.ShearStrengthModelTypeAbovePhreaticLevel.value == "Su"
+            or persistable_soil.ShearStrengthModelTypeBelowPhreaticLevel.value == "Su"
         ):
             # SHANSEP model is selected so the StrengthIncreaseExponentStochasticParameter from persistable_soil should be used
             return self.__to_global_stochastic_parameter(
@@ -717,7 +719,7 @@ class SoilCollection(DStabilitySubStructure):
             )
         elif (
             persistable_soil.ShearStrengthModelTypeAbovePhreaticLevel.value == "SuTable"
-            or persistable_soil.ShearStrengthModelTypeAbovePhreaticLevel.value
+            or persistable_soil.ShearStrengthModelTypeBelowPhreaticLevel.value
             == "SuTable"
         ):
             # SU table is selected so the StrengthIncreaseExponentStochasticParameter from SuTable should be used
@@ -813,6 +815,10 @@ class SoilCollection(DStabilitySubStructure):
                 for k, v in kwargs.items():
                     try:
                         setattr(persistable_soil, snake_to_camel(k), v)
+
+                        k_stochastic = f"{snake_to_camel(k)}StochasticParameter"
+                        if hasattr(persistable_soil, k_stochastic):
+                            getattr(persistable_soil, k_stochastic).Mean = v
                     except AttributeError:
                         raise ValueError(f"Unknown soil parameter {k}.")
 
@@ -825,14 +831,16 @@ class SoilCollection(DStabilitySubStructure):
 
 
 class PersistableForbiddenLine(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     End: Optional[PersistablePoint]
-    Label: Optional[str]
     Start: Optional[PersistablePoint]
 
 
 class PersistableGeotextile(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     End: Optional[PersistablePoint]
-    Label: Optional[str]
     ReductionArea: Optional[float]
     Start: Optional[PersistablePoint]
     TensileStrength: Optional[float]
@@ -850,11 +858,12 @@ class PersistableNail(DStabilityBaseModelStructure):
     Direction: Optional[float] = 0.0
     GroutDiameter: Optional[float] = 0.0
     HorizontalSpacing: Optional[float] = 0.0
-    Label: Optional[str]
+    Label: Optional[str] = ""
     LateralStresses: Optional[List[Optional[PersistableStressAtDistance]]] = []
     Length: Optional[float]
     Location: Optional[PersistablePoint]
     MaxPullForce: Optional[float] = 0.0
+    Notes: Optional[str] = ""
     PlasticMoment: Optional[float] = 0.0
     ShearStresses: Optional[List[Optional[PersistableStressAtDistance]]] = []
     UseFacing: Optional[bool] = False
@@ -914,6 +923,7 @@ class PersistableBondStress(DStabilityBaseModelStructure):
 
 
 class PersistableNailPropertiesForSoil(DStabilityBaseModelStructure):
+    AreBondStressesActive: Optional[bool] = False
     BondStresses: Optional[List[Optional[PersistableBondStress]]] = []
     CompressionRatio: Optional[float]
     RheologicalCoefficient: Optional[float]
@@ -943,6 +953,8 @@ class PersistableEarthquake(DStabilityBaseModelStructure):
     FreeWaterFactor: Optional[float] = 0.0
     HorizontalFactor: Optional[float] = 0.0
     IsEnabled: Optional[bool] = False
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     VerticalFactor: Optional[float] = 0.0
 
 
@@ -954,16 +966,18 @@ class PersistableLayerLoad(DStabilityBaseModelStructure):
 class PersistableLineLoad(DStabilityBaseModelStructure):
     Angle: Optional[float]
     Consolidations: Optional[List[Optional[PersistableConsolidation]]] = []
-    Label: Optional[str]
+    Label: Optional[str] = ""
     Location: Optional[PersistablePoint]
     Magnitude: Optional[float]
+    Notes: Optional[str] = ""
     Spread: Optional[float]
 
 
 class PersistableTree(DStabilityBaseModelStructure):
     Force: Optional[float]
-    Label: Optional[str]
+    Label: Optional[str] = ""
     Location: Optional[PersistablePoint]
+    Notes: Optional[str] = ""
     RootZoneWidth: Optional[float]
     Spread: Optional[float]
 
@@ -971,8 +985,9 @@ class PersistableTree(DStabilityBaseModelStructure):
 class PersistableUniformLoad(DStabilityBaseModelStructure):
     Consolidations: Optional[List[Optional[PersistableConsolidation]]] = []
     End: Optional[float]
-    Label: Optional[str]
+    Label: Optional[str] = ""
     Magnitude: Optional[float]
+    Notes: Optional[str] = ""
     Spread: Optional[float]
     Start: Optional[float]
 
@@ -1024,8 +1039,8 @@ class Loads(DStabilitySubStructure):
 
 class PersistableLayer(DStabilityBaseModelStructure):
     Id: Optional[str]
-    Label: Optional[str]
-    Notes: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     Points: conlist(PersistablePoint, min_items=3)
 
     @validator("Points", pre=True, allow_reuse=True)
@@ -1111,12 +1126,14 @@ class Geometry(DStabilitySubStructure):
 
 class PersistableBerm(DStabilityBaseModelStructure):
     AddedLayerId: Optional[str]
-    Label: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     Points: Optional[List[Optional[PersistablePoint]]]
 
 
 class PersistableExcavation(DStabilityBaseModelStructure):
-    Label: Optional[str]
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     Points: Optional[List[Optional[PersistablePoint]]]
 
 
@@ -1139,6 +1156,8 @@ class PersistableCircle(DStabilityBaseModelStructure):
 
 class PersistableBishopSettings(DStabilityBaseModelStructure):
     Circle: Optional[PersistableCircle] = PersistableCircle()
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
 
 
 class PersistableGridEnhancements(DStabilityBaseModelStructure):
@@ -1152,6 +1171,8 @@ class NullablePersistablePoint(DStabilityBaseModelStructure):
 
 class PersistableSearchGrid(DStabilityBaseModelStructure):
     BottomLeft: Optional[NullablePersistablePoint] = None
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     NumberOfPointsInX: Optional[int] = 1
     NumberOfPointsInZ: Optional[int] = 1
     Space: Optional[float] = 1.0
@@ -1171,6 +1192,8 @@ class PersistableSlipPlaneConstraints(DStabilityBaseModelStructure):
 
 class PersistableTangentLines(DStabilityBaseModelStructure):
     BottomTangentLineZ: Optional[float] = "NaN"
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     NumberOfTangentLines: Optional[int] = 1
     Space: Optional[float] = 0.5
 
@@ -1197,6 +1220,8 @@ CalculationType = CalculationTypeEnum
 
 
 class PersistableSpencerSettings(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     SlipPlane: Optional[List[Optional[PersistablePoint]]] = None
 
 
@@ -1215,6 +1240,8 @@ class PersistableGeneticSlipPlaneConstraints(DStabilityBaseModelStructure):
 
 
 class PersistableSpencerGeneticSettings(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     OptionsType: Optional[OptionsTypeEnum] = OptionsType.DEFAULT
     SlipPlaneA: Optional[List[Optional[PersistablePoint]]] = None
     SlipPlaneB: Optional[List[Optional[PersistablePoint]]] = None
@@ -1230,6 +1257,8 @@ class PersistableTwoCirclesOnTangentLine(DStabilityBaseModelStructure):
 
 
 class PersistableUpliftVanSettings(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     SlipPlane: Optional[
         PersistableTwoCirclesOnTangentLine
     ] = PersistableTwoCirclesOnTangentLine()
@@ -1237,16 +1266,22 @@ class PersistableUpliftVanSettings(DStabilityBaseModelStructure):
 
 class PersistableSearchArea(DStabilityBaseModelStructure):
     Height: Optional[float] = 0.0
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     TopLeft: Optional[NullablePersistablePoint] = None
     Width: Optional[float] = 0.0
 
 
 class PersistableTangentArea(DStabilityBaseModelStructure):
     Height: Optional[float] = 0.0
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     TopZ: Optional[float] = None
 
 
 class PersistableUpliftVanParticleSwarmSettings(DStabilityBaseModelStructure):
+    Label: Optional[str] = ""
+    Notes: Optional[str] = ""
     OptionsType: Optional[OptionsTypeEnum] = OptionsType.DEFAULT
     SearchAreaA: Optional[PersistableSearchArea] = PersistableSearchArea()
     SearchAreaB: Optional[PersistableSearchArea] = PersistableSearchArea()
@@ -1385,6 +1420,7 @@ class PersistableSoilContribution(DStabilityBaseModelStructure):
     Alpha: Optional[float] = None
     Property: Optional[str] = None
     SoilId: Optional[str] = None
+    UncorrelatedAlpha: Optional[float] = None
     Value: Optional[float] = None
 
 
@@ -1392,6 +1428,7 @@ class PersistableStageContribution(DStabilityBaseModelStructure):
     Alpha: Optional[float] = None
     Property: Optional[str] = None
     StageId: Optional[str] = None
+    UncorrelatedAlpha: Optional[float] = None
     Value: Optional[float] = None
 
 
@@ -1399,6 +1436,7 @@ class PersistableStateLinePointContribution(DStabilityBaseModelStructure):
     Alpha: Optional[float] = None
     Property: Optional[str] = None
     StateLinePointId: Optional[str] = None
+    UncorrelatedAlpha: Optional[float] = None
     Value: Optional[float] = None
 
 
@@ -1406,6 +1444,7 @@ class PersistableStatePointContribution(DStabilityBaseModelStructure):
     Alpha: Optional[float] = None
     Property: Optional[str] = None
     StatePointId: Optional[str] = None
+    UncorrelatedAlpha: Optional[float] = None
     Value: Optional[float] = None
 
 
@@ -1768,17 +1807,33 @@ class DStabilityStructure(BaseModelStructure):
     bishop_reliability_results: List[BishopReliabilityResult] = []
     bishop_results: List[BishopResult] = []
 
-    class Config:
-        arbitrary_types_allowed = True
-        validate_assignment = True
-        extra: "forbid"
-
     @root_validator(skip_on_failure=True, allow_reuse=True)
     def ensure_validaty_foreign_keys(cls, values):
         """TODO Include more fk relations, left for another issue."""
         for i, stage in enumerate(values.get("stages")):
-            if not values.get("stages")[i].GeometryId == values.get("geometries")[i].Id:
-                raise ValueError("Ids not linked!")
+            if stage.CalculationSettingsId != values.get("calculationsettings")[i].Id:
+                raise ValueError("CalculationSettingsIds not linked!")
+            if stage.DecorationsId != values.get("decorations")[i].Id:
+                raise ValueError("DecorationsIds not linked!")
+            if stage.GeometryId != values.get("geometries")[i].Id:
+                raise ValueError("GeometryIds not linked!")
+            if stage.LoadsId != values.get("loads")[i].Id:
+                raise ValueError("LoadsIds not linked!")
+            if stage.ReinforcementsId != values.get("reinforcements")[i].Id:
+                raise ValueError("ReinforcementsIds not linked!")
+            if stage.SoilLayersId != values.get("soillayers")[i].Id:
+                raise ValueError("SoilLayersIds not linked!")
+            if stage.StateId != values.get("states")[i].Id:
+                raise ValueError("StateIds not linked!")
+            if stage.StateCorrelationsId != values.get("statecorrelations")[i].Id:
+                raise ValueError("StateCorrelationsIds not linked!")
+            if (
+                stage.WaternetCreatorSettingsId
+                != values.get("waternetcreatorsettings")[i].Id
+            ):
+                raise ValueError("WaternetCreatorSettingsIds not linked!")
+            if stage.WaternetId != values.get("waternets")[i].Id:
+                raise ValueError("WaternetIds not linked!")
         return values
 
     @property
@@ -1797,7 +1852,9 @@ class DStabilityStructure(BaseModelStructure):
             "geometries",
         ]
 
-    def get_stage_specific_fields(self, stage=0) -> Tuple[str, DStabilitySubStructure]:
+    def get_stage_specific_fields(
+        self, stage=0
+    ) -> Generator[Tuple[str, DStabilitySubStructure], None, None]:
         """Yield stage specific fields for given stage."""
         for fieldname in self.stage_specific_fields:
             field = getattr(self, fieldname)
@@ -1820,7 +1877,9 @@ class DStabilityStructure(BaseModelStructure):
             value = getattr(instance, fkfield)
             if isinstance(value, (list, set, tuple)):
                 setattr(
-                    instance, fkfield, [get_correct_key(x, mapping) for x in value],
+                    instance,
+                    fkfield,
+                    [get_correct_key(x, mapping) for x in value],
                 )
             if isinstance(value, (int, float, str)):
                 setattr(instance, fkfield, get_correct_key(value, mapping))
@@ -1858,7 +1917,9 @@ class DStabilityStructure(BaseModelStructure):
 
         return len(self.stages) - 1, unique_start_id
 
-    def add_default_stage(self, label: str, notes: str, unique_start_id=500) -> int:
+    def add_default_stage(
+        self, label: str, notes: str, unique_start_id=500
+    ) -> Tuple[int, int]:
         """Add a new default (empty) stage to DStability."""
         self.waternets += [Waternet(Id=str(unique_start_id + 1))]
         self.waternetcreatorsettings += [
@@ -1866,6 +1927,13 @@ class DStabilityStructure(BaseModelStructure):
         ]
         self.states += [State(Id=str(unique_start_id + 3))]
         self.statecorrelations += [StateCorrelation(Id=str(unique_start_id + 4))]
+        self.soillayers += [SoilLayerCollection(Id=str(unique_start_id + 5))]
+        self.soilcorrelation: SoilCorrelation = SoilCorrelation()
+        self.reinforcements += [Reinforcements(Id=str(unique_start_id + 6))]
+        self.loads += [Loads(Id=str(unique_start_id + 7))]
+        self.decorations += [Decorations(Id=str(unique_start_id + 9))]
+        self.calculationsettings += [CalculationSettings(Id=str(unique_start_id + 10))]
+        self.geometries += [Geometry(Id=str(unique_start_id + 8))]
         self.stages += [
             Stage(
                 CalculationSettingsId=str(unique_start_id + 10),
@@ -1883,13 +1951,6 @@ class DStabilityStructure(BaseModelStructure):
                 WaternetId=str(unique_start_id + 1),
             )
         ]
-        self.soillayers += [SoilLayerCollection(Id=str(unique_start_id + 5))]
-        self.soilcorrelation: SoilCorrelation = SoilCorrelation()
-        self.reinforcements += [Reinforcements(Id=str(unique_start_id + 6))]
-        self.loads += [Loads(Id=str(unique_start_id + 7))]
-        self.decorations += [Decorations(Id=str(unique_start_id + 9))]
-        self.calculationsettings += [CalculationSettings(Id=str(unique_start_id + 10))]
-        self.geometries += [Geometry(Id=str(unique_start_id + 8))]
 
         return len(self.stages) - 1, unique_start_id + 11
 

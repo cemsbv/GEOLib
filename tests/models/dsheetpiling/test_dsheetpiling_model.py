@@ -48,8 +48,8 @@ from geolib.models.dsheetpiling.loads import (
     NormalForce,
     SurchargeLoad,
     UniformLoad,
-    VerificationLoadSettings,
-    VerificationLoadSettingsHorizontalLineLoad,
+    VerificationLoadSettingsMomentNormalForce,
+    VerificationLoadSettingsLoads,
 )
 from geolib.models.dsheetpiling.profiles import SoilLayer, SoilProfile
 from geolib.models.dsheetpiling.settings import (
@@ -130,7 +130,8 @@ class TestDsheetPilingModel:
 
     @pytest.mark.systemtest
     @pytest.mark.parametrize(
-        "filename", [pytest.param(Path("bm1-1.shi"), id="Input file")],
+        "filename",
+        [pytest.param(Path("bm1-1.shi"), id="Input file")],
     )
     def test_given_parsed_input_when_serialize_then_same_content(self, filename: Path):
         # 1. Set up test data
@@ -178,7 +179,8 @@ class TestDsheetPilingModel:
 
     @pytest.mark.systemtest
     @pytest.mark.parametrize(
-        "filename", [pytest.param(Path("bm1-1.shi"), id="Input file")],
+        "filename",
+        [pytest.param(Path("bm1-1.shi"), id="Input file")],
     )
     def test_writing_anchors_large_values(self, filename: Path):
         """Test for bug in which very large values overlapped eachother
@@ -565,7 +567,7 @@ class TestDsheetPilingModel:
                     name="New load",
                     level=-1,
                     load=10,
-                    verification_load_settings=VerificationLoadSettingsHorizontalLineLoad(
+                    verification_load_settings=VerificationLoadSettingsLoads(
                         duration_type=LoadTypePermanentVariable.VARIABLE,
                         load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
                     ),
@@ -576,7 +578,7 @@ class TestDsheetPilingModel:
                     name="New load",
                     level=-1,
                     load=10,
-                    verification_load_settings=VerificationLoadSettings(
+                    verification_load_settings=VerificationLoadSettingsMomentNormalForce(
                         duration_type=LoadTypePermanentVariable.VARIABLE,
                         load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
                     ),
@@ -629,7 +631,7 @@ class TestDsheetPilingModel:
                     force_at_surface_level_left_side=-10,
                     force_at_surface_level_right_side=1,
                     force_at_sheet_pile_toe=10,
-                    verification_load_settings=VerificationLoadSettingsHorizontalLineLoad(
+                    verification_load_settings=VerificationLoadSettingsMomentNormalForce(
                         duration_type=LoadTypePermanentVariable.VARIABLE,
                         load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
                     ),
@@ -738,7 +740,7 @@ class TestDsheetPilingModel:
         testload = SurchargeLoad(
             name="New SurchargeLoad",
             points=[Point(x=0, z=5), Point(x=5, z=10), Point(x=10, z=0)],
-            verification_load_settings=VerificationLoadSettings(
+            verification_load_settings=VerificationLoadSettingsLoads(
                 duration_type=LoadTypePermanentVariable.VARIABLE,
                 load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
             ),
@@ -803,7 +805,7 @@ class TestDsheetPilingModel:
             SurchargeLoad(
                 name="New SurchargeLoad",
                 points=[Point(x=0, z=-5), Point(x=-5, z=-10), Point(x=-10, z=0)],
-                verification_load_settings=VerificationLoadSettings(
+                verification_load_settings=VerificationLoadSettingsLoads(
                     duration_type=LoadTypePermanentVariable.VARIABLE,
                     load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
                 ),
@@ -817,7 +819,7 @@ class TestDsheetPilingModel:
             SurchargeLoad(
                 name="New SurchargeLoad",
                 points=[Point(x=10, z=5), Point(x=0, z=5), Point(x=10, z=0)],
-                verification_load_settings=VerificationLoadSettings(
+                verification_load_settings=VerificationLoadSettingsLoads(
                     duration_type=LoadTypePermanentVariable.VARIABLE,
                     load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
                 ),
@@ -830,7 +832,7 @@ class TestDsheetPilingModel:
         testload = SurchargeLoad(
             name="New SurchargeLoad",
             points=[Point(x=0, z=5), Point(x=5, z=10), Point(x=10, z=10)],
-            verification_load_settings=VerificationLoadSettings(
+            verification_load_settings=VerificationLoadSettingsLoads(
                 duration_type=LoadTypePermanentVariable.VARIABLE,
                 load_type=LoadTypeFavourableUnfavourable.UNFAVOURABLE,
             ),

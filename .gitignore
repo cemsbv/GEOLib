@@ -21,3 +21,10 @@ htmlcov/
 .mypy_cache/
 tests/test_output/*
 *.code-workspace
+.DS_Store
+.hypothesis
+
+tests/DStabilityConsole
+tests/DSheetPilingConsole
+tests/DSettlementConsole
+tests/DFoundationsConsole
